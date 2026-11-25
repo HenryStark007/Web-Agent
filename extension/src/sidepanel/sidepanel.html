@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Aegis Privacy Vision Agent</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif;
+      width: 360px; padding: 12px;
+      background: #0d1117; color: #e6edf3;
+      overflow-y: auto; max-height: 100vh;
+    }
+    h1 {
+      font-size: 15px; margin: 0 0 10px;
+      display: flex; align-items: center; gap: 6px;
+      background: linear-gradient(135deg, #238636 0%, #1f6feb 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      font-weight: 700;
+    }
+    h2 {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px;
+      color: #8b949e; margin: 10px 0 5px; font-weight: 600;
+    }
+
+    label { font-size: 11px; color: #8b949e; display: block; margin-bottom: 3px; }
+    input[type=text] {
+      width: 100%; padding: 7px 8px; border-radius: 6px;
+      border: 1px solid #30363d; background: #161b22; color: #e6edf3;
+      font-size: 12px; margin-bottom: 6px;
+      transition: border-color 0.2s;
+    }
+    input[type=text]:focus { border-color: #238636; outline: none; }
+
+    .controls-row { display: flex; gap: 6px; margin-bottom: 10px; }
+
+    button#run {
+      flex: 1; padding: 10px; border-radius: 6px; border: none;
+      background: linear-gradient(135deg, #238636, #2ea043);
+      color: #fff; font-weight: 600; font-size: 13px;
+      cursor: pointer; transition: all 0.2s;
+    }
+    button#run:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    button#run:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    button#runMulti {
+      flex: 1; padding: 10px; border-radius: 6px; border: none;
+      background: linear-gradient(135deg, #1f6feb, #388bfd);
+      color: #fff; font-weight: 600; font-size: 12px;
+      cursor: pointer; transition: all 0.2s;
+    }
+    button#runMulti:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    button#runMulti:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .panel {
+      border: 1px solid #30363d; border-radius: 8px;
+      padding: 10px 12px; background: #161b22; margin-bottom: 8px;
+    }
+    .panel-title {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px;
+      color: #8b949e; margin-bottom: 6px; font-weight: 600;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .panel-title .badge {
+      font-size: 9px; padding: 2px 6px; border-radius: 10px;
+      font-weight: 700; letter-spacing: 0;
+    }
+    .badge-green { background: #23863620; color: #3fb950; border: 1px solid #23863640; }
+    .badge-blue { background: #1f6feb20; color: #58a6ff; border: 1px solid #1f6feb40; }
+    .badge-yellow { background: #d2992220; color: #d29922; border: 1px solid #d2992240; }
+    .badge-red { background: #f8514920; color: #f85149; border: 1px solid #f8514940; }
+
+    .row {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 12px; padding: 3px 0; border-bottom: 1px solid #21262d;
+    }
+    .row:last-child { border-bottom: none; }
+    .row .label { color: #8b949e; }
+
+    .ok { color: #3fb950; font-weight: 600; }
+    .bad { color: #f85149; font-weight: 600; }
+    .warn { color: #d29922; font-weight: 600; }
+    .neutral { color: #8b949e; }
+    .info { color: #58a6ff; font-weight: 600; }
+
+    .pii-grid {
+      display: grid; grid-template-columns: 1fr auto;
+      gap: 2px 8px; font-size: 12px;
+    }
+    .pii-grid .pii-type { color: #8b949e; }
+    .pii-grid .pii-count { font-weight: 600; text-align: right; }
+
+    /* Perception Inspector */
+    .perception-grid {
+      display: grid; grid-template-columns: 1fr auto;
+      gap: 2px 8px; font-size: 11px;
+    }
+    .perception-grid .p-label { color: #8b949e; }
+    .perception-grid .p-value { font-weight: 600; text-align: right; }
+
+    .type-chips {
+      display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px;
+    }
+    .type-chip {
+      font-size: 9px; padding: 2px 6px; border-radius: 10px;
+      font-weight: 600; border: 1px solid #30363d; background: #21262d;
+    }
+    .type-chip.button { color: #4CAF50; border-color: #4CAF5040; }
+    .type-chip.input_field { color: #2196F3; border-color: #2196F340; }
+    .type-chip.icon { color: #FFC107; border-color: #FFC10740; }
+    .type-chip.card { color: #9C27B0; border-color: #9C27B040; }
+    .type-chip.link { color: #00BCD4; border-color: #00BCD440; }
+    .type-chip.badge { color: #FF5722; border-color: #FF572240; }
+    .type-chip.interactive { color: #fff; border-color: #ffffff40; }
+
+    /* Step Progress */
+    .step-progress {
+      display: flex; gap: 3px; margin: 6px 0;
+    }
+    .step-dot {
+      width: 24px; height: 24px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; color: #8b949e;
+      background: #21262d; border: 1.5px solid #30363d;
+      transition: all 0.3s;
+    }
+    .step-dot.active { border-color: #1f6feb; color: #58a6ff; background: #1f6feb20; }
+    .step-dot.done { border-color: #238636; color: #3fb950; background: #23863620; }
+    .step-dot.failed { border-color: #f85149; color: #f85149; background: #f8514920; }
+
+    /* Telemetry bar */
+    .telemetry-bar {
+      display: flex; gap: 6px; margin: 6px 0;
+    }
+    .telemetry-item {
+      flex: 1; text-align: center; padding: 6px 4px;
+      background: #21262d; border-radius: 6px;
+      border: 1px solid #30363d;
+    }
+    .telemetry-item .t-value {
+      font-size: 16px; font-weight: 700; color: #58a6ff;
+      line-height: 1.2;
+    }
+    .telemetry-item .t-label {
+      font-size: 8px; text-transform: uppercase; color: #8b949e;
+      letter-spacing: 0.5px;
+    }
+
+    .screenshots { display: flex; gap: 8px; }
+    .screenshots .screenshot-col { flex: 1; }
+    .screenshots .screenshot-col label {
+      font-size: 9px; text-transform: uppercase; letter-spacing: 0.4px;
+      color: #8b949e; margin-bottom: 4px; display: block;
+    }
+    .screenshots img {
+      width: 100%; border-radius: 4px; border: 1px solid #30363d;
+      display: block; cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .screenshots img:hover {
+      border-color: #58a6ff;
+      box-shadow: 0 0 8px rgba(88, 166, 255, 0.3);
+    }
+
+    /* ── Lightbox modal ── */
+    .lightbox-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0, 0, 0, 0.92); z-index: 999999;
+      justify-content: center; align-items: center;
+      flex-direction: column; cursor: zoom-out;
+    }
+    .lightbox-overlay.active { display: flex; }
+    .lightbox-header {
+      display: flex; justify-content: space-between; align-items: center;
+      width: 90vw; max-width: 900px; padding: 8px 4px 10px;
+    }
+    .lightbox-label {
+      font-size: 13px; font-weight: 600; color: #e6edf3;
+      text-transform: uppercase; letter-spacing: 0.8px;
+    }
+    .lightbox-close {
+      background: #30363d; border: 1px solid #484f5860;
+      color: #e6edf3; font-size: 13px; font-weight: 700;
+      width: 32px; height: 32px; border-radius: 50%;
+      cursor: pointer; display: flex; align-items: center;
+      justify-content: center; transition: all 0.2s;
+    }
+    .lightbox-close:hover { background: #f85149; border-color: #f85149; }
+    .lightbox-img {
+      max-width: 90vw; max-height: 80vh;
+      border-radius: 8px; border: 2px solid #30363d;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+      cursor: default;
+    }
+    .lightbox-hint {
+      margin-top: 10px; font-size: 11px; color: #8b949e;
+    }
+
+    .log {
+      margin-top: 8px; font-size: 9px; color: #8b949e;
+      max-height: 120px; overflow-y: auto; white-space: pre-wrap;
+      font-family: 'SF Mono', 'Cascadia Code', monospace;
+      border: 1px solid #21262d; border-radius: 6px;
+      padding: 8px; background: #0d1117;
+      line-height: 1.5;
+    }
+
+    .error-banner {
+      display: none; padding: 8px 12px; border-radius: 6px;
+      background: #f8514912; border: 1px solid #f8514940;
+      color: #f85149; font-size: 12px; font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .mode-selector {
+      display: flex; gap: 4px; margin-bottom: 8px;
+    }
+    .mode-btn {
+      flex: 1; padding: 6px 4px; border-radius: 6px; border: 1px solid #30363d;
+      background: #161b22; color: #8b949e; font-size: 10px; font-weight: 600;
+      cursor: pointer; text-align: center; transition: all 0.2s;
+    }
+    .mode-btn.active {
+      background: #1f6feb20; border-color: #1f6feb; color: #58a6ff;
+    }
+    .mode-btn:hover { border-color: #58a6ff; }
+  </style>
+</head>
+<body>
+  <h1>
+    <span style="font-size: 18px;">&#128274;</span>
+    Aegis Privacy Vision Agent
+  </h1>
+
+  <label for="task">Instruction</label>
+  <input id="task" type="text" value="Search for laptops" />
+
+  <label for="serverUrl">Server URL</label>
+  <input id="serverUrl" type="text" value="http://127.0.0.1:8000/analyze" />
+
+  <div class="controls-row">
+    <button id="run">▶ Single Step</button>
+    <button id="runMulti">⚡ Multi-Step Agent</button>
+  </div>
+
+  <div id="errorBanner" class="error-banner"></div>
+
+  <!-- STEP PROGRESS (Phase 4) -->
+  <div class="panel" id="stepPanel" style="display: none;">
+    <div class="panel-title">
+      Agent Loop
+      <span id="stepBadge" class="badge badge-blue">—</span>
+    </div>
+    <div class="step-progress" id="stepProgress"></div>
+  </div>
+
+  <!-- ON-DEVICE TELEMETRY (Phase 3) -->
+  <div class="panel" id="telemetryPanel" style="display: none;">
+    <div class="panel-title">
+      On-Device Performance
+      <span class="badge badge-green">LOCAL</span>
+    </div>
+    <div class="telemetry-bar">
+      <div class="telemetry-item">
+        <div class="t-value" id="telDetectMs">—</div>
+        <div class="t-label">Detect</div>
+      </div>
+      <div class="telemetry-item">
+        <div class="t-value" id="telVisionMs">—</div>
+        <div class="t-label">Vision</div>
+      </div>
+      <div class="telemetry-item">
+        <div class="t-value" id="telRedactMs">—</div>
+        <div class="t-label">Redact</div>
+      </div>
+      <div class="telemetry-item">
+        <div class="t-value" id="telElements">—</div>
+        <div class="t-label">Elements</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISUAL PERCEPTION INSPECTOR (Phase 3) -->
+  <div class="panel" id="perceptionPanel" style="display: none;">
+    <div class="panel-title">
+      Visual Perception
+      <span class="badge badge-blue">ON-DEVICE</span>
+    </div>
+    <div class="perception-grid" id="perceptionGrid">
+      <div class="p-label" style="grid-column:1/-1; color: #8b949e;">No perception data yet</div>
+    </div>
+    <div class="type-chips" id="typeChips"></div>
+  </div>
+
+  <!-- PRIVACY SCAN -->
+  <div class="panel" id="piiPanel">
+    <div class="panel-title">Privacy Scan</div>
+    <div class="pii-grid" id="piiGrid">
+      <div class="pii-type neutral" style="grid-column: 1 / -1;">No scan performed yet</div>
+    </div>
+    <div class="row" style="margin-top: 6px; border-top: 1px solid #30363d; padding-top: 6px;">
+      <span class="label">Total PII detected</span>
+      <span id="piiTotal" class="neutral">0</span>
+    </div>
+  </div>
+
+  <!-- PRIVACY STATUS -->
+  <div class="panel">
+    <div class="panel-title">Privacy Status</div>
+    <div class="row">
+      <span class="label">Raw screen sent</span>
+      <span id="rawSent" class="ok">NO &#10060;</span>
+    </div>
+    <div class="row">
+      <span class="label">Raw PII sent</span>
+      <span id="rawPIISent" class="ok">NO &#10060;</span>
+    </div>
+    <div class="row">
+      <span class="label">Sanitized screen sent</span>
+      <span id="sanitizedSent" class="neutral">&mdash;</span>
+    </div>
+    <div class="row">
+      <span class="label">Privacy check</span>
+      <span id="privacyCheck" class="neutral">&mdash;</span>
+    </div>
+    <div class="row">
+      <span class="label">Reasoning source</span>
+      <span id="reasoningSource" class="neutral">&mdash;</span>
+    </div>
+    <div class="row">
+      <span class="label">Server action</span>
+      <span id="serverAction" class="neutral">&mdash;</span>
+    </div>
+    <div class="row">
+      <span class="label">Confidence</span>
+      <span id="confidence" class="neutral">&mdash;</span>
+    </div>
+    <div class="row">
+      <span class="label">Local execution</span>
+      <span id="execStatus" class="neutral">&mdash;</span>
+    </div>
+  </div>
+
+  <!-- BEFORE / AFTER SCREENSHOTS -->
+  <div class="panel" id="beforeAfterPanel" style="display: none;">
+    <div class="panel-title">Before / After Redaction</div>
+    <div class="screenshots">
+      <div class="screenshot-col">
+        <label>Before (raw &mdash; local only)</label>
+        <img id="beforeImg" alt="Before redaction" />
+      </div>
+      <div class="screenshot-col">
+        <label>After (sanitized &mdash; sent)</label>
+        <img id="afterImg" alt="After redaction" />
+      </div>
+    </div>
+  </div>
+
+  <!-- PIPELINE LOG -->
+  <h2>Pipeline Log</h2>
+  <div class="log" id="log">Waiting for task...</div>
+
+  <!-- LIGHTBOX MODAL -->
+  <div class="lightbox-overlay" id="lightbox">
+    <div class="lightbox-header">
+      <span class="lightbox-label" id="lightboxLabel"></span>
+      <button class="lightbox-close" id="lightboxClose" title="Close">&times;</button>
+    </div>
+    <img class="lightbox-img" id="lightboxImg" alt="Full-size screenshot" />
+    <div class="lightbox-hint">Click anywhere or press Esc to close</div>
+  </div>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>

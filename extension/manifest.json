@@ -1,0 +1,53 @@
+{
+  "manifest_version": 3,
+  "name": "Aegis Privacy Vision Agent",
+  "version": "0.1.0",
+  "description": "Local-first privacy-preserving vision agent. Detects and redacts PII in the DOM/screenshot BEFORE anything is sent to the server.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "sidePanel",
+    "tabs",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>",
+    "https://cdn.jsdelivr.net/*",
+    "https://tessdata.projectnaptha.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Aegis Privacy Agent"
+  },
+  "side_panel": {
+    "default_path": "src/sidepanel/sidepanel.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": [
+        "vendor/tesseract/tesseract.min.js",
+        "src/core/privacy/piiDetector.js",
+        "src/core/privacy/redactor.js",
+        "src/core/vision/screenshotRedactor.js",
+        "src/core/vision/ocrDetector.js",
+        "src/core/vision/visualPerception.js",
+        "src/core/actions/executor.js",
+        "src/core/content/domExtractor.js",
+        "src/core/content/content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["vendor/tesseract/worker.min.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

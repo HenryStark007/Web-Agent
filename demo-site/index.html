@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Demo Shopping Site — Aegis Privacy Vision Agent</title>
+<style>
+  body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; max-width: 640px; margin: 40px auto; color: #222; }
+  h1 { font-size: 20px; }
+  section { border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+  .field { margin-bottom: 8px; }
+  .field .label { font-size: 12px; color: #777; }
+  .field .value { font-size: 15px; font-family: monospace; }
+  .price { font-size: 22px; font-weight: 700; color: #1a7f37; }
+  button { padding: 10px 16px; border-radius: 6px; border: none; background: #1a1a1a; color: white; font-weight: 600; margin-right: 8px; cursor: pointer; }
+  button.primary { background: #4f8cff; }
+  #status { margin-top: 16px; font-weight: 700; }
+  .note { font-size: 12px; color: #999; margin-top: 24px; }
+  .pii-badge { display: inline-block; font-size: 9px; background: #ff5252; color: #fff; border-radius: 3px; padding: 1px 5px; margin-left: 6px; vertical-align: middle; }
+</style>
+</head>
+<body>
+  <h1>Demo Shopping Website (fake data only)</h1>
+
+  <section>
+    <h2>Customer Information</h2>
+    <div class="field"><div class="label">Name</div><div class="value" data-pii="name">Amit Kumar</div></div>
+    <div class="field"><div class="label">Email</div><div class="value" data-pii="email">amit@example.com</div></div>
+    <div class="field"><div class="label">Phone</div><div class="value" data-pii="phone">9876543210</div></div>
+    <div class="field"><div class="label">Password</div><div class="value" data-pii="password">Secret123</div></div>
+    <div class="field"><div class="label">Credit Card</div><div class="value" data-pii="credit_card">4111 1111 1111 1111</div></div>
+    <div class="field"><div class="label">Address</div><div class="value" data-pii="address">123 Demo Street, New Delhi</div></div>
+  </section>
+
+  <section>
+    <h2>Product</h2>
+    <p><strong>Laptop</strong></p>
+    <p class="price">&#8377;50,000</p>
+    <button id="search">Search</button>
+    <button id="addToCart">Add to Cart</button>
+    <button id="buyNow" class="primary">Buy Now</button>
+    <div id="status"></div>
+  </section>
+
+  <p class="note">All information on this page is <strong>completely fake</strong> and used only to demonstrate that
+  sensitive fields are detected and redacted locally before anything is sent to the server.
+  The Aegis extension scans for PII (name, email, phone, password, credit card, address),
+  redacts them with black boxes, and only sends the sanitized screenshot to the VLM.</p>
+
+  <script>
+    document.getElementById("buyNow").addEventListener("click", () => {
+      document.getElementById("status").textContent = "Purchase initiated";
+    });
+    document.getElementById("addToCart").addEventListener("click", () => {
+      document.getElementById("status").textContent = "Added to cart";
+    });
+    document.getElementById("search").addEventListener("click", () => {
+      document.getElementById("status").textContent = "Searching...";
+    });
+  </script>
+</body>
+</html>
